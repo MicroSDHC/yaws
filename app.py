@@ -7,10 +7,12 @@ import json
 import datetime as dt
 import time
 from random import randint
+from collections import deque
 
 app = Flask(__name__)
 monkey.patch_all()
 
+rdrobin = deque([], 50)
 
 class ShoutsNamespace(BaseNamespace):
     sockets = {}
@@ -45,6 +47,8 @@ def push_stream(rest):
 @app.route('/data', methods=['POST'])
 def add_data():
     sensors = json.loads(request.data)
+    rdrobin.append({'x': sensors['time'], 'y': sensors['temp']})
+    print rdrobin
     ShoutsNamespace.broadcast('sensors_update', sensors)
     return json.dumps({'result': 'OK'})
 
@@ -56,17 +60,17 @@ def index():
 
 @app.route('/data', methods=['GET'])
 def get_data():
-    s = dt.datetime.utcnow()
-    dts = [s - dt.timedelta(minutes=5 * x) for x in range(50)]
-    print dts
-    ts = [[int(time.mktime(x.timetuple())), randint(20, 50)] for x in dts]
+    print list(rdrobin)
+    #s = dt.datetime.utcnow()
+    #dts = [s - dt.timedelta(minutes=5 * x) for x in range(50)]
+    #ts = [{'x':int(time.mktime(x.timetuple())), 'y': randint(20, 50)} for x in dts]
     res = [{
         'key': 'Temp',
-        'values': ts
+        'values': list(rdrobin)
     }]
     return json.dumps(res)
 
 
 if __name__ == '__main__':
     port = 8080
-    SocketIOServer(('', port), app, resource="socket.io").serve_forever()
+    SocketIOServer(('', port), app, namespace="socket.io").serve_forever()

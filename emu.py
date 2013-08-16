@@ -9,7 +9,7 @@ while True:
         'temp': '{0:.1f}'.format(random() * 100.0),
         'humidity': '{0:.1f}'.format(random() * 100.0),
         'pressure': randint(730, 780),
-        'time': datetime.utcnow().isoformat()
+        'time': int(time.time())#datetime.utcnow().isoformat()
     }
     requests.post('http://localhost:8080/data', data=json.dumps(sensors))
     time.sleep(3)

@@ -1,19 +1,7 @@
 
-
 (function() {
 
-  var mainExample, exampleOne, exampleTwo, exampleThree;
-
-  //var colors = d3.scale.category20().range();
-
-  var test_data = stream_layers(3,20 + Math.random()*50,.1).map(function(data, i) {
-    return {
-      key: 'Stream' + i
-    , values: data
-    //, color: colors[i]
-    };
-  });
-
+  var mychart;
 
   nv.addGraph(function() {  
     var chart = nv.models.lineChart()
@@ -22,33 +10,63 @@
 
     chart.xAxis
        .tickFormat(function(d) {
-           return d3.time.format('%x')(new Date(d))
+           console.warn(d);
+           return d3.time.format('%X')(new Date(d*1000))
        });
 
     chart.yAxis
         .tickFormat(d3.format(',.1f'));
 
-  var data;
-  console.warn(test_data);
+  mychart = chart;
 
   d3.json("/data", function(error, json) {
-    if (error) return console.warn(error);
-    data = json;
+    //if (error) return console.warn(error);
+    //alert(error);
+    console.info(error);
 
-  d3.select('#exampleOne')
-      .datum(data)
-      .transition().duration(500)
-      .call(chart);
+    // d3.select('#exampleOne')
+    //     .datum(error)
+    //     .transition().duration(500)
+    //     .call(chart);
   });
 
 
-    //TODO: Figure out a good way to do this automatically
     nv.utils.windowResize(chart.update);
-    //nv.utils.windowResize(function() { d3.select('#chart1 svg').call(chart) });
-
-    exampleOne = chart;
-
     return chart;
+  });
+
+
+  updateSensors = function(values) {
+      d3.select("#temp").html(values.temp + " C");
+      d3.select("#humidity").html(values.humidity + " %");
+      d3.select("#indoor_temp").html(values.temp + " C");
+      d3.select("#indoor_humidity").html(values.humidity + " %");
+      d3.select("#pressure").html(values.pressure + " mm");
+      var datetime = new Date(values.time);
+      d3.select("#time").html(datetime.getUTCHours() + ":" + datetime.getUTCMinutes());
+    d3.json("/data", function(error, json) {
+      //if (error) return console.warn(error);
+      //alert(error);
+      //console.info(error);
+
+      d3.select('#exampleOne')
+          .datum(error)
+          .transition().duration(500)
+          .call(mychart);
+    });
+  }
+
+  var socket = io.connect('/shouts');
+  socket.on('connect', function() {
+      console.log("socket connected");
+  });
+  socket.on('disconnect', function() {
+      console.log("socket disconnected");
+  });
+
+  socket.on('sensors_update', function(data) {
+      console.log("Got message:", data);
+      updateSensors(data);
   });
 
 
