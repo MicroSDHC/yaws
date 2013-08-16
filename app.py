@@ -4,6 +4,9 @@ from socketio import socketio_manage
 from socketio.namespace import BaseNamespace
 from socketio.server import SocketIOServer
 import json
+import datetime as dt
+import time
+from random import randint
 
 app = Flask(__name__)
 monkey.patch_all()
@@ -34,7 +37,8 @@ def push_stream(rest):
     try:
         socketio_manage(request.environ, {'/shouts': ShoutsNamespace}, request)
     except:
-        app.logger.error("Exception while handling socketio connection", exc_info=True)
+        app.logger.error(
+            "Exception while handling socketio connection", exc_info=True)
     return Response()
 
 
@@ -48,6 +52,19 @@ def add_data():
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
+
+
+@app.route('/data', methods=['GET'])
+def get_data():
+    s = dt.datetime.utcnow()
+    dts = [s - dt.timedelta(minutes=5 * x) for x in range(50)]
+    print dts
+    ts = [[int(time.mktime(x.timetuple())), randint(20, 50)] for x in dts]
+    res = [{
+        'key': 'Temp',
+        'values': ts
+    }]
+    return json.dumps(res)
 
 
 if __name__ == '__main__':
