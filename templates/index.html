@@ -8,6 +8,8 @@
     <meta name="author" content="">
 
     <title>Tim's Weather Station page</title>
+    <link rel="apple-touch-icon" href="static/img/iphone-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link href="static/css/bootstrap.css" rel="stylesheet">
     <link href="static/css/sticky-footer-navbar.css" rel="stylesheet">
     <link href="static/css/rickshaw.min.css" rel="stylesheet">
@@ -39,35 +41,37 @@
       <!-- Begin page content -->
       <div class="container">
         <div class="page-header">
-          <h1>Current (Russia, Moscow)</h1>
+          <h2>Current <small>(Russia, Moscow)</small></h2>
         </div>
           <div class="row">
              <div class="col-lg-2">
-                <div>Temperature</div><div id="temp">26.0 C</div>
+                <div>Temperature</div><div id="temp">N/A</div>
              </div>
              <div class="col-lg-2">
-                <div>Pressure</div><div id="pressure">743 mm</div>
+                <div>Pressure</div><div id="pressure">N/A</div>
              </div>
              <div class="col-lg-2">
-                <div>Humidity</div><div id="humidity">55 %</div>
+                <div>Humidity</div><div id="humidity">N/A</div>
              </div>
              <div class="col-lg-2">
-                <div>Temperature indoor</div><div id="indoor_temp">24.0 C</div>
+                <div>Temperature indoor</div><div id="indoor_temp">N/A</div>
              </div>
              <div class="col-lg-2">
-                <div>Humidity indoor</div><div id="indoor_humidity">52 %</div>
+                <div>Humidity indoor</div><div id="indoor_humidity">N/A</div>
              </div>
              <div class="col-lg-2">
-                <div>Time (UTC)</div><div id="time">16:00</div>
+                <div>Time (UTC)</div><div id="time">N/A</div>
              </div>
           </div>
-          <h2>History</h2>
-          <svg id="exampleOne" style="height:320px"></svg>
+          <div class="visible-lg">
+            <h2>History</h2>
+            <svg id="exampleOne" style="height:320px"></svg>
+          </div>
       </div>
     </div>
 
-    <div id="footer">
-      <div class="container">
+    <div id="footer hidden-sm">
+      <div class="container hidden-sm">
         <p class="text-muted credit">You can grab the source code of my weather station <a href="http://github.com/timson81">My Github</a>.</p>
       </div>
     </div>

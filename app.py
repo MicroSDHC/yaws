@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, Response
 from gevent import monkey
+monkey.patch_all()
 from socketio import socketio_manage
 from socketio.namespace import BaseNamespace
 from socketio.server import SocketIOServer
@@ -8,17 +9,20 @@ import datetime as dt
 import time
 from random import randint
 from collections import deque
+from pymongo import MongoClient
+import copy
 
 app = Flask(__name__)
-monkey.patch_all()
+mongo_clnt = MongoClient()
+last_value = {}
 
-rdrobin = deque([], 50)
 
 class ShoutsNamespace(BaseNamespace):
     sockets = {}
 
     def recv_connect(self):
         print "Got a socket connection"  # debug
+        self.emit('sensors_update', last_value)
         self.sockets[id(self)] = self
 
     def disconnect(self, *args, **kwargs):
@@ -46,9 +50,18 @@ def push_stream(rest):
 
 @app.route('/sensors', methods=['POST'])
 def add_data():
-    sensors = json.loads(request.data)
-    rdrobin.append({'x': sensors['time'], 'y': sensors['temp']})
-    ShoutsNamespace.broadcast('sensors_update', sensors)
+    try:
+        global last_value
+        current = json.loads(request.data)
+        last_value = copy.copy(current)
+        last_value['time'] = dt.datetime.utcnow().isoformat()
+        db = mongo_clnt.db
+        sensors = db.sensors
+        current.update({'time': dt.datetime.utcnow()})
+        sensors.insert(current)
+        ShoutsNamespace.broadcast('sensors_update', last_value)
+    except Exception as err:
+        print err
     return json.dumps({'result': 'OK'})
 
 
