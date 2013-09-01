@@ -44,11 +44,10 @@ def push_stream(rest):
     return Response()
 
 
-@app.route('/data', methods=['POST'])
+@app.route('/sensors', methods=['POST'])
 def add_data():
     sensors = json.loads(request.data)
     rdrobin.append({'x': sensors['time'], 'y': sensors['temp']})
-    print rdrobin
     ShoutsNamespace.broadcast('sensors_update', sensors)
     return json.dumps({'result': 'OK'})
 
@@ -73,4 +72,4 @@ def get_data():
 
 if __name__ == '__main__':
     port = 8080
-    SocketIOServer(('', port), app, namespace="socket.io").serve_forever()
+    SocketIOServer(('', port), app, resource="socket.io").serve_forever()
