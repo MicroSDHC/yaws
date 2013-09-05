@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="static/img/iphone-icon.png" />
+    <meta name="format-detection" content="telephone=no">
+    <title>Tim's Weather Station page</title>
+    <link href="static/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    body
+    {
+      color: #FFFFFF;
+      background: #1e5799; /* Old browsers */
+      background: -moz-linear-gradient(top,  #1e5799 0%, #207cca 34%, #2989d8 50%, #7db9e8 100%); /* FF3.6+ */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#1e5799), color-stop(34%,#207cca), color-stop(50%,#2989d8), color-stop(100%,#7db9e8)); /* Chrome,Safari4+ */
+      background: -webkit-linear-gradient(top,  #1e5799 0%,#207cca 34%,#2989d8 50%,#7db9e8 100%);
+      background: -o-linear-gradient(top,  #1e5799 0%,#207cca 34%,#2989d8 50%,#7db9e8 100%); /* Opera 11.10+ */
+      background: -ms-linear-gradient(top,  #1e5799 0%,#207cca 34%,#2989d8 50%,#7db9e8 100%); /* IE10+ */
+    }
+    html { 
+      min-height: 100%;
+    }    
+    </style>
+  </head>
+
+  <body>
+    <div id="wrap">
+      <!-- Begin page content -->
+      <div class="container">
+          <div class="row">
+             <div class="col-xs-6">
+                <div><h4 class="text-left">Location: Moscow</h4></div>
+             </div>
+             <div class="col-xs-6">
+                 <div><h4 class="text-right" id="time">N/A</h4></div>
+            </div>
+          </div>
+
+          <div class="row">
+             <div class="col-xs-12">
+                <div><h1 class="text-center" id="temp">N/A</h1></div>
+             </div>
+          </div>
+
+          <div class="row">
+             <div class="col-xs-12">
+                <div><h5 class="text-center"><strong><p style="color: #F5B222">N/A</p></strong><strong></h5></div>
+             </div>
+          </div>
+
+          <div class="row">
+             <div class="col-xs-12">
+                <div><h5 class="text-center" id="humidity">N/A</h5></div>
+             </div>
+          </div>
+
+          <div class="row">
+             <div class="col-xs-12">
+                <div><h5 class="text-center" id="pressure">N/A</h5></div>
+             </div>
+          </div>
+
+          <div class="row">
+             <div class="col-xs-12">
+                <div><h5 class="text-center" id="indoor">N/A</h5></div>
+             </div>
+          </div>
+
+          <center>
+            <img src="static/img/partly-cloudy.png" width="50%" class="img-responsive" alt="Responsive image">
+          </center>
+
+
+      </div>
+    </div>
+
+
+    <script src="static/js/d3.min.js"></script>
+    <script type="text/javascript" src="static/js/socket.io.js"></script>
+    <script src="static/js/moment.min.js"></script>
+    <script src="static/js/main.m.js"></script>
+  </body>
+</html>
