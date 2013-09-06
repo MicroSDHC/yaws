@@ -1,0 +1,24 @@
+{
+    "http": {
+        "host": "w.tslp.me",
+        "port": 80
+    },
+    "interval": 60,
+    "sensors": [
+        {
+            "class": "bmp_sensor",
+            "name": "local",
+            "kw": {
+                "interval": 60
+            }
+        },
+        {
+            "class": "rf_sensor",
+            "name": "remote",
+            "kw": {
+                "dev_name": "/dev/rfm12b.0.1",
+                "node_id": 14
+            }
+        }
+    ]
+}
