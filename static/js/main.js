@@ -1,7 +1,4 @@
-
 (function() {
-
-
 // var graph = new Rickshaw.Graph({
 //         element: document.querySelector("#exampleOne"),
 //         renderer: 'line',
@@ -19,8 +16,8 @@
       d3.select("#indoor_temp").html(values.local.TEMP + " C");
       //d3.select("#indoor_humidity").html(values.humidity + " %");
       d3.select("#pressure").html(values.local.PRESSURE + " mm");
-      var datetime = new Date(values.time);
-      d3.select("#time").html(datetime.getUTCHours() + ":" + datetime.getUTCMinutes());
+      var datetime = moment(values.time);
+      d3.select("#time").html(datetime.format('HH:mm'));
   }
 
   var socket = io.connect('/shouts');
@@ -36,6 +33,9 @@
       updateSensors(data);
   });
 
-
+  d3.json("/data", function(error, json) {
+      console.log(json);
+      updateSensors(json);
+  });
 
 })();

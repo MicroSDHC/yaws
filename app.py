@@ -14,7 +14,14 @@ import copy
 
 app = Flask(__name__)
 mongo_clnt = MongoClient()
-last_value = {}
+
+def read_last_value():
+    tval = mongo_clnt.db.sensors.find().sort('time', -1).limit(1)[0]
+    tval['time'] = tval['time'].isoformat()
+    tval.pop('_id')
+    return tval
+
+last_value = read_last_value()
 
 
 class ShoutsNamespace(BaseNamespace):
@@ -22,6 +29,7 @@ class ShoutsNamespace(BaseNamespace):
 
     def recv_connect(self):
         print "Got a socket connection"  # debug
+        print last_value
         self.emit('sensors_update', last_value)
         self.sockets[id(self)] = self
 
@@ -67,20 +75,18 @@ def add_data():
 
 @app.route('/', methods=['GET'])
 def index():
+    browser = request.user_agent.browser
+    version = request.user_agent.version and int(request.user_agent.version.split('.')[0])
+    platform = request.user_agent.platform
+    uas = request.user_agent.string
+    if platform == 'iphone':
+        return render_template('index_mobile.html')
     return render_template('index.html')
 
 
 @app.route('/data', methods=['GET'])
 def get_data():
-    print list(rdrobin)
-    #s = dt.datetime.utcnow()
-    #dts = [s - dt.timedelta(minutes=5 * x) for x in range(50)]
-    #ts = [{'x':int(time.mktime(x.timetuple())), 'y': randint(20, 50)} for x in dts]
-    res = [{
-        'key': 'Temp',
-        'values': list(rdrobin)
-    }]
-    return json.dumps(res)
+    return json.dumps(last_value)
 
 
 if __name__ == '__main__':
