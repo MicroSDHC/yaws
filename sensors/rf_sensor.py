@@ -53,6 +53,8 @@ class RFM12Sensor(sensor.Sensor):
                 res = {}
                 if addr == OUTDOOR_NODE_ADDR:
                     self._data['OUTDOOR'] = parse_outdoor_node(payload)
+                if addr == INDOOR_NODE_ADDR:
+                    self._data['INDOOR'] = parse_outdoor_node(payload)
  
 
 if __name__ == '__main__':
