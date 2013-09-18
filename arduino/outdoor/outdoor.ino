@@ -6,6 +6,8 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); }
 
 #define DHT22_POWER_PIN 4
 #define DHT22_PIN       7
+#define OUTDOOR_NODE_ID 20
+#define BASE_STATION_ID 14
 
 DHT22 myDHT22(DHT22_PIN);
 
@@ -41,7 +43,7 @@ long readVcc() {
 }
 
 void setup () {
-  rf12_initialize(20, RF12_433MHZ, 1);
+  rf12_initialize(OUTDOOR_NODE_ID, RF12_433MHZ, 1);
   disableDHT22();
   blinkLed();
 }
@@ -57,7 +59,7 @@ int readDHT(char* buf)
       sprintf(buf, "TEMP %hi.%01hi C, HUM %i.%01i %% RH, VCC %i mv\n",
                    myDHT22.getTemperatureCInt()/10, abs(myDHT22.getTemperatureCInt()%10),
                    myDHT22.getHumidityInt()/10, myDHT22.getHumidityInt()%10, readVcc());
-      //Serial.println(buf);
+      Serial.println(buf);
       break;
     case DHT_ERROR_CHECKSUM:
       break;
@@ -82,7 +84,7 @@ void loop () {
   rf12_sleep(RF12_WAKEUP);
   char buf[128];
   readDHT(buf);
-  rf12_sendNow(0, buf, strlen(buf));
+  rf12_sendNow(BASE_STATION_ID, buf, strlen(buf));
   rf12_sendWait(1);
   rf12_sleep(RF12_SLEEP);
   // go to sleep for approx 60 seconds
