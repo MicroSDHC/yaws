@@ -18,6 +18,6 @@ class BMPSensor(sensor.Sensor):
     def run(self):
         while not self._stop.isSet():
             self._data['TEMP'] = self._bmp.readTemperature()
-            self._data['PRESSURE'] = int(self._bmp.readPressure() / 133.322)
+            self._data['PRESSURE'] = float(self._bmp.readPressure() / 133.322)
             self._stop.wait(self._interval)
 
