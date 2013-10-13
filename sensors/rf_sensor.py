@@ -36,8 +36,10 @@ class RFM12Sensor(sensor.Sensor):
     def setup(self, **kw):
         dev_name = kw.get('dev_name', DEV_NAME)
         node_id = kw.get('node_id', NODE_ID)
+        self._dlt = float(kw.get('dlt', 600.0))  # data life time
         self._fd = open_rf(dev_name, node_id)
         self._data = {}
+        self._update_time = {}
 
     def get_data(self):
         return self._data
@@ -53,10 +55,16 @@ class RFM12Sensor(sensor.Sensor):
                 res = {}
                 if addr == OUTDOOR_NODE_ADDR:
                     self._data['OUTDOOR'] = parse_outdoor_node(payload)
+                    self._update_time['OUTDOOR'] = time.time()
                 if addr == INDOOR_NODE_ADDR:
                     self._data['INDOOR'] = parse_outdoor_node(payload)
- 
+                    self._update_time['INDOOR'] = time.time()
+            for e in self._update_time.keys():
+                ct = time.time()
+                if self._update_time[e] + self._dlt < ct:
+                    self._date[e] = {}
 
+ 
 if __name__ == '__main__':
     sobj = RFM12Sensor("rfm12")
     sobj.start()
