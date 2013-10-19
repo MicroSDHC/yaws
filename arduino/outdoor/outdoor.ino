@@ -1,6 +1,5 @@
 #include <JeeLib.h>
 #include <DHT22.h>
-#include <stdio.h>
 
 ISR(WDT_vect) { Sleepy::watchdogEvent(); }
 
@@ -10,6 +9,18 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); }
 #define BASE_STATION_ID 14
 #define LIGHT_SENSOR_POWER_PIN 8
 #define LIGHT_SENSOR_PIN A2
+
+#define DHT_ERROR_CNT_MAX 10
+#define ACK_TIME          10
+#define SEND_RETRY_LIMIT 10
+
+struct {
+  int temp;
+  int humi;
+  long vcc;
+  int light;
+  bool dht_error;
+} payload;
 
 DHT22 myDHT22(DHT22_PIN);
 
@@ -45,7 +56,7 @@ void blinkLed() {
   digitalWrite(9, LOW);
 }
 
-long readVcc() {
+void readVcc() {
   long result;
   // Read 1.1V reference against AVcc
   ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
@@ -55,7 +66,24 @@ long readVcc() {
   result = ADCL;
   result |= ADCH<<8;
   result = 1126400L / result; // Back-calculate AVcc in mV
-  return result;
+  payload.vcc = result;
+}
+
+static byte waitForAck() {
+    MilliTimer ackTimer;
+    while (!ackTimer.poll(ACK_TIME)) {
+        if (rf12_recvDone() && rf12_crc == 0 &&
+                rf12_hdr == (RF12_HDR_DST | RF12_HDR_CTL | OUTDOOR_NODE_ID))
+            return 1;
+    }
+    return 0;
+}
+
+void readLight()
+{
+  int sensorValue = analogRead(LIGHT_SENSOR_PIN);
+  float voltage = sensorValue * (5000 / 1023.0);
+  payload.light = (int)voltage;
 }
 
 void setup () {
@@ -65,55 +93,47 @@ void setup () {
   blinkLed();
 }
 
-int readLight()
-{
-  int sensorValue = analogRead(LIGHT_SENSOR_PIN);
-  float voltage = sensorValue * (5000 / 1023.0);
-  return (int)voltage;
-}
 
-int readDHT(char* buf)
+void readDHT()
 { 
-  int l;
+  byte retry_count = 0;
   DHT22_ERROR_t errorCode;
-  enableDHT22();
-  enableLight();  
-  errorCode = myDHT22.readData();
-  switch(errorCode)
+  enableDHT22();  
+  errorCode = DHT_ERROR_CHECKSUM;
+  while (errorCode != DHT_ERROR_NONE | retry_count < DHT_ERROR_CNT_MAX) {
+      errorCode = myDHT22.readData();
+      delay(2000);
+      retry_count++;
+  }
+  if (errorCode == DHT_ERROR_NONE)
   {
-    case DHT_ERROR_NONE:
-      sprintf(buf, "TEMP %hi.%01hi C, HUM %i.%01i %% RH, LUM %i mv, VCC %i mv\n",
-                   myDHT22.getTemperatureCInt()/10, abs(myDHT22.getTemperatureCInt()%10),
-                   myDHT22.getHumidityInt()/10, myDHT22.getHumidityInt()%10, readLight(), readVcc());
-      break;
-    case DHT_ERROR_CHECKSUM:
-      break;
-    case DHT_BUS_HUNG:
-      break;
-    case DHT_ERROR_NOT_PRESENT:
-      break;
-    case DHT_ERROR_ACK_TOO_LONG:
-      break;
-    case DHT_ERROR_SYNC_TIMEOUT:
-      break;
-    case DHT_ERROR_DATA_TIMEOUT:
-      break;
-    case DHT_ERROR_TOOQUICK:
-      break;
+    payload.temp = myDHT22.getTemperatureCInt();
+    payload.humi = myDHT22.getHumidityInt();
+    payload.dht_error = false;
+  } else {
+    payload.dht_error = true;
   }
   disableDHT22();
-  disableLight();
-  return errorCode;
 }
-
 
 void loop () {
-  rf12_sleep(RF12_WAKEUP);
-  char buf[160];
-  readDHT(buf);
-  rf12_sendNow(BASE_STATION_ID, buf, strlen(buf));
-  rf12_sendWait(1);
-  rf12_sleep(RF12_SLEEP);
-  // go to sleep for approx 60 seconds
-  Sleepy::loseSomeTime(300000);
+  readDHT();
+  readVcc();
+  readLight();
+  for (byte i = 0; i < SEND_RETRY_LIMIT; i++)
+  {
+    rf12_sleep(RF12_WAKEUP);
+    rf12_sendNow(BASE_STATION_ID, &payload, sizeof(payload));
+    rf12_sendWait(2);
+    byte acked = waitForAck();  
+    rf12_sleep(RF12_SLEEP);
+    if (acked)
+    {
+      return;
+    }
+    delay(1000);
+  }
+  // go to sleep for approx 60 * 5 seconds
+  Sleepy::loseSomeTime(60000 * 5);
 }
+
