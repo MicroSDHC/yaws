@@ -1,7 +1,7 @@
 {
     "http": {
-        "host": "w.tslp.me",
-        "port": 80
+        "host": "localhost",
+        "port": 8080
     },
     "interval": 60,
     "sensors": [
