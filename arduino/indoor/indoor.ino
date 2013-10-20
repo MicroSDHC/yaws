@@ -1,5 +1,6 @@
 #include <JeeLib.h>
 #include <DHT22.h>
+#include <PortsBMP085.h>
 
 ISR(WDT_vect) { Sleepy::watchdogEvent(); }
 
@@ -9,15 +10,18 @@ ISR(WDT_vect) { Sleepy::watchdogEvent(); }
 #define BASE_STATION_ID 14
 
 #define DHT_ERROR_CNT_MAX 10
-#define ACK_TIME          10
+#define ACK_TIME          1000
 
 #define SEND_RETRY_LIMIT 10
 
 DHT22 myDHT22(DHT22_PIN);
+PortI2C i2cport (2);
+BMP085 psensor (i2cport, 3);
 
 struct {
   int temp;
   int humi;
+  int32_t pressure;  
   long vcc;
   bool dht_error;
 } payload;
@@ -31,12 +35,12 @@ void disableDHT22() {
 void enableDHT22() {
   pinMode(DHT22_POWER_PIN, OUTPUT);
   digitalWrite(DHT22_POWER_PIN, HIGH);
-  delay(2000);
+  Sleepy::loseSomeTime(2000);
 }
 
 void blinkLed() {
   digitalWrite(9, HIGH);
-  delay(100);
+  Sleepy::loseSomeTime(100);
   digitalWrite(9, LOW);
 }
 
@@ -58,8 +62,7 @@ void readVcc() {
 static byte waitForAck() {
     MilliTimer ackTimer;
     while (!ackTimer.poll(ACK_TIME)) {
-        if (rf12_recvDone() && rf12_crc == 0 &&
-                rf12_hdr == (RF12_HDR_DST | RF12_HDR_CTL | INDOOR_NODE_ID))
+              if (rf12_recvDone() && rf12_crc == 0 && rf12_hdr == INDOOR_NODE_ID)
             return 1;
     }
     return 0;
@@ -67,6 +70,7 @@ static byte waitForAck() {
 
 void setup () {
   rf12_initialize(INDOOR_NODE_ID, RF12_433MHZ, 1);
+  psensor.getCalibData();
   disableDHT22();
   blinkLed();
 }
@@ -77,20 +81,35 @@ void readDHT()
   DHT22_ERROR_t errorCode;
   enableDHT22();  
   errorCode = DHT_ERROR_CHECKSUM;
-  while (errorCode != DHT_ERROR_NONE | retry_count < DHT_ERROR_CNT_MAX) {
+  while (retry_count < DHT_ERROR_CNT_MAX) {
       errorCode = myDHT22.readData();
-      delay(2000);
+      Sleepy::loseSomeTime(2000);
       retry_count++;
+      Serial.println(errorCode);
+      Serial.println(DHT_ERROR_NONE);
+      if (errorCode == DHT_ERROR_NONE)
+      {
+        break;
+      }
   }
   if (errorCode == DHT_ERROR_NONE)
   {
     payload.temp = myDHT22.getTemperatureCInt();
     payload.humi = myDHT22.getHumidityInt();
+    Serial.println(payload.temp);
+    Serial.println(payload.humi);
     payload.dht_error = false;
   } else {
     payload.dht_error = true;
   }
   disableDHT22();
+}
+
+void readPres()
+{
+    psensor.startMeas(BMP085::PRES);
+    Sleepy::loseSomeTime(32);
+    payload.pressure = psensor.getResult(BMP085::PRES);
 }
 
 void loop () {
@@ -100,15 +119,16 @@ void loop () {
   {
     rf12_sleep(RF12_WAKEUP);
     rf12_sendNow(BASE_STATION_ID, &payload, sizeof(payload));
-    rf12_sendWait(2);
-    byte acked = waitForAck();  
+    rf12_sendWait(1);
+    byte acked = waitForAck(); 
     rf12_sleep(RF12_SLEEP);
     if (acked)
     {
-      return;
+      break;
     }
-    delay(1000);
+    Sleepy::loseSomeTime(1000);
   }
-  // go to sleep for approx 60 * 5 seconds
-  Sleepy::loseSomeTime(60000 * 5);
+  // go to sleep for approx 60
+  for (int idx = 0; idx < 5; idx++)
+    Sleepy::loseSomeTime(60000);
 }
